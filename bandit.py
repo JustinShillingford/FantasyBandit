@@ -1,6 +1,5 @@
 import math
 import random
-import numpy
 
 def multiArmedBandit(self, players):
     for player as players:
