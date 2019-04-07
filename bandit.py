@@ -11,15 +11,15 @@ def multiArmedBandit(self, players):
     totalPulls = len(players)
 
     while(True):
-        bestPlayer = None
+        bestPlayerIndex = None
 
-        for player as players:
-            if ((self.exploitation(player) + self.exploration(player, totalPulls)) > bestPlayer["exploreVsExploit"]):
-                player["exploreVsExploit"] = self.exploitation(player) + self.exploration(player, totalPulls)
-                bestPlayer = player
+        for i in range(len(players)):
+            if ((self.exploitation(players[i]) + self.exploration(players[i], totalPulls)) > players[bestPlayerIndex]["exploreVsExploit"]):
+                players[i]["exploreVsExploit"] = self.exploitation(players[i]) + self.exploration(players[i], totalPulls)
+                bestPlayerIndex = i
 
-        bestPlayer["rewardSum"] += self.reward(bestPlayer)
-        bestPlayer["numPulls"] += 1
+        players[bestPlayerIndex]["rewardSum"] += self.reward(players[bestPlayerIndex])
+        players[bestPlayerIndex]["numPulls"] += 1
         totalPulls += 1
 
 def exploration(self, player, totalPulls):
