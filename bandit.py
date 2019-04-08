@@ -6,17 +6,23 @@ class Player:
     """
         The class that sets up a Player and their relevant attributes
     """
-    def __init__(self, name, rewardSum, numPulls, exploreVsExploit, probability):
+    def __init__(self, name, rewardSum, numPulls, exploreVsExploit, probability, per, winShares, gamesPlayed):
         self.name = name
         self.rewardSum = rewardSum
         self.numPulls = numPulls
         self.exploreVsExploit = exploreVsExploit
         self.probability = probability
 
+        self.per = per
+        self.winShares = winShares
+        self.gamesPlayed = gamesPlayed
+
 def initPlayersList(self):
     with open('nba-players-stats/Seasons_Stats.csv') as statsCSV:
         reader = csv.reader(statsCSV, delimiter=',')
         firstLine = True
+        players = []
+        last_player = ""
         for row in reader:
             if (firstLine):
                 firstLine = False
@@ -28,6 +34,19 @@ def initPlayersList(self):
                 # Win Shares = row[24]
                 # Games Played = row[6] <-- The numbers on this one look kinda weird for some reason
 
+                # check if there are multiple rows of identical player
+                # first row a player appears in always tends to be TOT, so we only need to store that one
+                if last_player != row[2]:
+                    name = row[2]
+                    per = row[9]
+                    winShares = row[24]
+                    gamesPlayed = row[6]
+
+                    # 0's are used as placeholders for the calculated values
+                    players.append(Player(name, 0, 0, 0, 0, per, winShares, gamesPlayed))
+                    
+                    last_player = name
+    return players
 
 def multiArmedBandit(self, players):
     for player as players:
