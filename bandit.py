@@ -1,5 +1,33 @@
 import math
 import random
+import csv
+
+class Player:
+    """
+        The class that sets up a Player and their relevant attributes
+    """
+    def __init__(self, name, rewardSum, numPulls, exploreVsExploit, probability):
+        self.name = name
+        self.rewardSum = rewardSum
+        self.numPulls = numPulls
+        self.exploreVsExploit = exploreVsExploit
+        self.probability = probability
+
+def initPlayersList(self):
+    with open('nba-players-stats/Seasons_Stats.csv') as statsCSV:
+        reader = csv.reader(statsCSV, delimiter=',')
+        firstLine = True
+        for row in reader:
+            if (firstLine):
+                firstLine = False
+            else:
+                # Player Processing Code goes here
+
+                # Name = row[2]
+                # PER = row[9]
+                # Win Shares = row[24]
+                # Games Played = row[6] <-- The numbers on this one look kinda weird for some reason
+
 
 def multiArmedBandit(self, players):
     for player as players:
