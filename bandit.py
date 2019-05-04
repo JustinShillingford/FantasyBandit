@@ -41,12 +41,14 @@ def initPlayersList():
                     per = row[9]
                     winShares = row[24]
                     gamesPlayed = row[6]
+                    year = row[1]
 
-                    if len(name) > 0:
+                    if len(name) > 0 and int(year) >= 2000:
                         # 0's are used as placeholders for the calculated values
                         players.append(Player(name, 0, 0, 0, 0, per, winShares, gamesPlayed))
                     
                     last_player = name
+    print(len(players))
     return players
 
 def exploration(player, totalPulls):
