@@ -42,8 +42,9 @@ def initPlayersList():
                     winShares = row[24]
                     gamesPlayed = row[6]
 
-                    # 0's are used as placeholders for the calculated values
-                    players.append(Player(name, 0, 0, 0, 0, per, winShares, gamesPlayed))
+                    if len(name) > 0:
+                        # 0's are used as placeholders for the calculated values
+                        players.append(Player(name, 0, 0, 0, 0, per, winShares, gamesPlayed))
                     
                     last_player = name
     return players
