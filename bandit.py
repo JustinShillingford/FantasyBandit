@@ -44,12 +44,12 @@ def initPlayersList():
                     gamesPlayed = row[6]
                     year = row[1]
 
-                    if len(name) > 0 and int(year) >= 2000:
+                    if len(name) > 0 and int(year) >= 2000 and len(per) > 0:
                         # 0's are used as placeholders for the calculated values
-                        players.append(Player(name, 0, 0, 0, 0, per, winShares, gamesPlayed))
+                        players.append(Player(name, float(per), 0, 0, (float(gamesPlayed) / 82), per, winShares, gamesPlayed))
                     
                     last_player = name
-    print(len(players))
+    print("Length of players = " + str(len(players)))
     return players
 
 def exploration(player, totalPulls):
@@ -65,23 +65,36 @@ def reward(player):
         return player.rewardSum
 
 def multiArmedBandit(players):
-    for player in players:
-        player.rewardSum = reward(player)
-        player.numPulls = 1
-        player.exploreVsExploit = 0
+    exploreVsExploit_lst = []
 
+    for i in range(len(players)):
+        players[i].rewardSum = reward(players[i])
+        players[i].numPulls = 1
+        players[i].exploreVsExploit = 0
+
+        exploreVsExploit_lst.append(0)
+
+    # At this point, you've pulled everything once
     totalPulls = len(players)
 
     while(True):
-        bestPlayerIndex = 0
+        
+        # Pick argmax from exploreVsExploit, then look at that corresponding player in players array
+        bestPlayerIndex = np.argmax(exploreVsExploit_lst)
+        # print("index = " + str(bestPlayerIndex) + " - ")
 
-        arg_max = np.argmax(players)
-        print(arg_max)
-
-        # print(bestPlayerIndex)
-        players[bestPlayerIndex].rewardSum += reward(players[bestPlayerIndex])
+        # Add a pull for the best player, update rewardSum for player that's been pulled
         players[bestPlayerIndex].numPulls += 1
+        players[bestPlayerIndex].rewardSum += reward(players[bestPlayerIndex])
+
+        # Prep for next pull
         totalPulls += 1
+        # Go thru and update exploreVsExploit for ALL players on next (N+1) pull
+        for i in range(len(players)):
+            exploreVsExploit_lst[i] = exploration(players[i], totalPulls) + exploitation(players[i])
+        
+        # print(exploreVsExploit_lst)
+
         print("Selected: " + players[bestPlayerIndex].name + ". I've selected them " + str(players[bestPlayerIndex].numPulls) + " times.")
 
 
