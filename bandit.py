@@ -1,6 +1,7 @@
 import math
 import random
 import csv
+import numpy as np
 
 class Player:
     """
@@ -74,12 +75,10 @@ def multiArmedBandit(players):
     while(True):
         bestPlayerIndex = 0
 
-        # Loop to calculate argmax
-        for i in range(len(players)):
-            if ((exploitation(players[i]) + exploration(players[i], totalPulls)) > players[bestPlayerIndex].exploreVsExploit):
-                players[i].exploreVsExploit = exploitation(players[i]) + exploration(players[i], totalPulls)
-                bestPlayerIndex = i
+        arg_max = np.argmax(players)
+        print(arg_max)
 
+        # print(bestPlayerIndex)
         players[bestPlayerIndex].rewardSum += reward(players[bestPlayerIndex])
         players[bestPlayerIndex].numPulls += 1
         totalPulls += 1
@@ -87,4 +86,5 @@ def multiArmedBandit(players):
 
 
 players = initPlayersList()
-multiArmedBandit(players)
+np_players = np.array(players)
+multiArmedBandit(np_players)
