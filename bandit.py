@@ -18,22 +18,27 @@ class Player:
         self.winShares = winShares
         self.gamesPlayed = gamesPlayed
 
-# make a dictionary of player names
-    # key = player name, value = number of times seen
-# if in dictionary, just increment all the values & num_times_seen
-# else, create the values and add to dictionary
-
-# at the end, average values out
-
+# Inputs:
+# [start_year] is the year to begin retrieving player data from
+# [check_year] is the year to retrieve player data from to compare team roster with algorithm results
+# [team] is the NBA team to retrieve player data from
+#
+# Returns an array where:
+# - the first element is a list of all players of a given [team] from the [start_year] to two years later
+# - the second element is the list of players on the given [team] the year following the algorithm's analysis
 def initPlayersList(start_year, check_year, team):
     with open('nba-players-stats/Seasons_Stats.csv') as statsCSV:
         reader = csv.reader(statsCSV, delimiter=',')
         firstLine = True
         players = []
+
+        # create dictionaries to keep track of players across multiple records
         player_seen_dict = {}
         player_index_dict = {}
+
+        # create list to compare algorithm results with
         check_players = []
-        last_player = ""
+        
         for row in reader:
             if (firstLine):
                 firstLine = False
@@ -46,7 +51,7 @@ def initPlayersList(start_year, check_year, team):
                 # Win Shares = row[24]
                 # Games Played = row[6] <-- The numbers on this one look kinda weird for some reason
 
-                # only include players within specified team
+                # only include players within specified team and year range
                 if team == row[5].lower() and len(row[2]) > 0 and len(row[9]) > 0 and int(row[1]) >= start_year and (int(row[1]) <= start_year + 2):
                     name = row[2]
                     per = row[9]
@@ -68,29 +73,12 @@ def initPlayersList(start_year, check_year, team):
                         player_seen_dict[name] = 1      # add player to dictionary
                         player_index_dict[name] = len(players)  # next index is length of list
 
-                        #if int(year) >= 2000:
-                            # 0's are used as placeholders for the calculated values
-                        players.append(Player(name, float(per), 0, 0, (float(gamesPlayed) / 82), float(per), float(winShares), float(gamesPlayed)))
-                            #players.append(Player(name, float(per), 0, 0, (float(gamesPlayed) / 82), per, winShares, gamesPlayed))
+                        # 0's are used as placeholders for the calculated values
+                        players.append(Player(name, float(per), 0, 0, float(gamesPlayed), float(per), float(winShares), float(gamesPlayed)))
                 
                 # get list of player names who are still on the team the following year
                 if team == row[5].lower() and len(row[2]) > 0 and len(row[9]) > 0 and int(row[1]) == check_year:
                     check_players.append(row[2])
-            else:
-                # check if there are multiple rows of identical player
-                # first row a player appears in always tends to be TOT, so we only need to store that one
-                if last_player != row[2]:
-                    name = row[2]
-                    per = row[9]
-                    winShares = row[24]
-                    gamesPlayed = row[6]
-                    year = row[1]
-
-                    if len(name) > 0 and int(year) >= 2000 and len(per) > 0:
-                        # 0's are used as placeholders for the calculated values
-                        players.append(Player(name, float(per), 0, 0, (float(gamesPlayed) / 82), per, winShares, gamesPlayed))
-
-                    last_player = name
 
         # average each player's values
         for i in range (0, len(players)):
@@ -102,7 +90,6 @@ def initPlayersList(start_year, check_year, team):
             players[i].gamesPlayed /= num_times_seen
             players[i].probability /= (82 * num_times_seen)
 
-    print("Length of players = " + str(len(players)))
     return [players, check_players]
 
 def exploration(player, totalPulls):
@@ -117,6 +104,8 @@ def reward(player):
     else:
         return float(player.per)
 
+# Returns a list of marks that coincide with the indicies of the [players] list that
+# indicates whether to keep a player (1) or remove the player (0) from the team.
 def multiArmedBandit(players):
     exploreVsExploit_lst = []
     keep = []
@@ -137,7 +126,6 @@ def multiArmedBandit(players):
 
         # Pick argmax from exploreVsExploit, then look at that corresponding player in players array
         bestPlayerIndex = np.argmax(exploreVsExploit_lst)
-        #print("index = " + str(bestPlayerIndex) + " - ")
 
         # Add a pull for the best player, update rewardSum for player that's been pulled
         players[bestPlayerIndex].numPulls += 1
@@ -152,18 +140,22 @@ def multiArmedBandit(players):
             else:               # stop updating kept player
                 exploreVsExploit_lst[i] = 0
 
-        # print(exploreVsExploit_lst)
-
-        # Mark a player if we choose to keep
+        # Mark a player if we choose to keep them
         if(players[bestPlayerIndex].numPulls > 50):
             keep[bestPlayerIndex] = 1               # mark the player
             kept += 1
             exploreVsExploit_lst[bestPlayerIndex] = 0   # prevent player from being selected again
 
-        #print("Selected: " + players[bestPlayerIndex].name + ". I've selected them " + str(players[bestPlayerIndex].numPulls) + " times.")
-
     return keep
 
+# Inputs:
+# [keep] is the list of marks that indicate whether a player was selected to stay on the team
+# [following_yr_lst] is the list of player names that are on the team the year following the algorithm's analysis
+# [all] is the list of all Player objects that have been on the specified team during the given years
+#
+# Returns an array where: 
+# - the first element is the suggested number of players to be removed
+# - the second element is the number of players that remained on the team despite suggesting otherwise 
 def print_players(keep, following_yr_lst, all):
     # lists to store player names
     players_kept = []
@@ -175,8 +167,6 @@ def print_players(keep, following_yr_lst, all):
         if keep[i] == 1:
             players_kept.append(all[i].name)
             print("Keep: " + all[i].name)
-            # if all[i].name in following_yr_lst:
-            #     failure_count += 1
         else:
             players_removed.append(all[i].name)
             if all[i].name in following_yr_lst:
@@ -185,12 +175,19 @@ def print_players(keep, following_yr_lst, all):
     # print removed players
     for i in range(0, len(players_removed)):
         print("Remove: " + players_removed[i])
-    
-    # return [len(players_removed), failure_count]
+
     return [len(players_removed), failure_count]
 
-# team is a string version of the acronym for a given team
-def runBandit(start_year, team = None):
+
+# [team] is a string version of the acronym for a given team
+# [start_year] is the year to begin running the algorithm on
+# 
+# Note: When [start_year] > 2015, [start_year] is defaulted to 2015 to allow the 
+# algorithm to run across 3 years.
+# When [start_year] = 2015, [check_year] will be defaulted to 2017 to fetch the most
+# recent player data available for evaluation. However, since 2017 is included in the 
+# algorithm's analysis, the success rate will be lower.
+def runBandit(start_year, team):
     check_year = (start_year + 3 <= 2017) and (start_year + 3) or 2017  # selected year to form eval on results
 
     players = initPlayersList(start_year, check_year, team)
@@ -202,21 +199,15 @@ def runBandit(start_year, team = None):
     num_successes = check_info[0] - check_info[1]
     print(str(num_successes) + " out of " + str(check_info[0]) + " suggested players to be removed were no longer on the team in " + str(check_year))
 
+
+
 # only works in python 2.7, later versions require 'input' function
 team = raw_input("Enter the official acronym for the team you're interested in or 'None' otherwise: ").lower()
-#select_year = raw_input("Player data is obtained from 2000-2017 by default. Would you like to specify a year range? Enter 'Y' for yes or 'N' for no.").lower()
-start_year = int(raw_input("Player data is available for 2000-2017. Algorithm will use 3 consecutive years inclusive. Enter a specific year to begin retrieving data from: "))
 
+start_year = int(raw_input("Player data is available for 2000-2017. Algorithm will use 3 consecutive years inclusive. Enter a specific year to begin retrieving data from: "))
 start_year = (start_year > 2015) and 2015 or start_year
-# if (select_year == "y"):
-#     start_year = int(raw_input("Enter a start year in the range [2000, 2017]: "))
-#     end_year = int(raw_input("Enter an end year in the range [2000, 2017]: "))
 
 if team != "none":
     runBandit(start_year, team)
 else:
     runBandit(start_year)
-
-# give user year selection
-# average each player's data for all years
-# give precedence to recent performance somehow
