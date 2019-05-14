@@ -172,10 +172,10 @@ def print_players(keep, all):
             print("Keep: " + all[i].name)
         else:
             players_removed.append(all[i].name)
-
+    print("-----------------------------------")
     # print removed players
-    # for i in range(0, len(players_removed)):
-    #     print("Remove: " + players_removed[i])
+    for i in range(0, len(players_removed)):
+        print("Remove: " + players_removed[i])
 
 # team is a string version of the acronym for a given team
 def runBandit(start_year, team = None):
