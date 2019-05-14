@@ -25,13 +25,14 @@ class Player:
 
 # at the end, average values out
 
-def initPlayersList(start_year, team):
+def initPlayersList(start_year, check_year, team):
     with open('nba-players-stats/Seasons_Stats.csv') as statsCSV:
         reader = csv.reader(statsCSV, delimiter=',')
         firstLine = True
         players = []
         player_seen_dict = {}
         player_index_dict = {}
+        check_players = []
         last_player = ""
         for row in reader:
             if (firstLine):
@@ -71,7 +72,10 @@ def initPlayersList(start_year, team):
                             # 0's are used as placeholders for the calculated values
                         players.append(Player(name, float(per), 0, 0, (float(gamesPlayed) / 82), float(per), float(winShares), float(gamesPlayed)))
                             #players.append(Player(name, float(per), 0, 0, (float(gamesPlayed) / 82), per, winShares, gamesPlayed))
-
+                
+                # get list of player names who are still on the team the following year
+                if team == row[5].lower() and len(row[2]) > 0 and len(row[9]) > 0 and int(row[1]) == check_year:
+                    check_players.append(row[2])
             else:
                 # check if there are multiple rows of identical player
                 # first row a player appears in always tends to be TOT, so we only need to store that one
@@ -99,7 +103,7 @@ def initPlayersList(start_year, team):
             players[i].probability /= (82 * num_times_seen)
 
     print("Length of players = " + str(len(players)))
-    return players
+    return [players, check_players]
 
 def exploration(player, totalPulls):
     return (2 * math.sqrt(math.log(totalPulls))) / (math.sqrt(player.numPulls))
@@ -160,29 +164,43 @@ def multiArmedBandit(players):
 
     return keep
 
-def print_players(keep, all):
+def print_players(keep, following_yr_lst, all):
     # lists to store player names
     players_kept = []
     players_removed = []
+    failure_count = 0
 
     # create lists and concurrently print kept players
     for i in range(0, len(all)):
         if keep[i] == 1:
             players_kept.append(all[i].name)
             print("Keep: " + all[i].name)
+            # if all[i].name in following_yr_lst:
+            #     failure_count += 1
         else:
             players_removed.append(all[i].name)
+            if all[i].name in following_yr_lst:
+                failure_count += 1
     print("-----------------------------------")
     # print removed players
     for i in range(0, len(players_removed)):
         print("Remove: " + players_removed[i])
+    
+    # return [len(players_removed), failure_count]
+    return [len(players_removed), failure_count]
 
 # team is a string version of the acronym for a given team
 def runBandit(start_year, team = None):
-    players = initPlayersList(start_year, team)
-    np_players = np.array(players)
+    check_year = (start_year + 3 <= 2017) and (start_year + 3) or 2017  # selected year to form eval on results
+
+    players = initPlayersList(start_year, check_year, team)
+    np_players = np.array(players[0])
     kept_player_indices = multiArmedBandit(np_players)
-    print_players(kept_player_indices, np_players)
+
+    check_info = print_players(kept_player_indices, players[1], np_players)
+
+    num_successes = check_info[0] - check_info[1]
+    print(str(num_successes) + " out of " + str(check_info[0]) + " suggested players to be removed were no longer on the team in " + str(check_year))
 
 # only works in python 2.7, later versions require 'input' function
 team = raw_input("Enter the official acronym for the team you're interested in or 'None' otherwise: ").lower()
