@@ -41,6 +41,7 @@ def initPlayersList(start_year, team):
 
                 # Name = row[2]
                 # PER = row[9]
+                # +/- = row[29]
                 # Win Shares = row[24]
                 # Games Played = row[6] <-- The numbers on this one look kinda weird for some reason
 
@@ -84,7 +85,7 @@ def initPlayersList(start_year, team):
                     if len(name) > 0 and int(year) >= 2000 and len(per) > 0:
                         # 0's are used as placeholders for the calculated values
                         players.append(Player(name, float(per), 0, 0, (float(gamesPlayed) / 82), per, winShares, gamesPlayed))
-                    
+
                     last_player = name
 
         # average each player's values
@@ -146,13 +147,13 @@ def multiArmedBandit(players):
                 exploreVsExploit_lst[i] = exploration(players[i], totalPulls) + exploitation(players[i])
             else:               # stop updating kept player
                 exploreVsExploit_lst[i] = 0
-        
+
         # print(exploreVsExploit_lst)
 
         # Mark a player if we choose to keep
         if(players[bestPlayerIndex].numPulls > 50):
             keep[bestPlayerIndex] = 1               # mark the player
-            kept += 1                               
+            kept += 1
             exploreVsExploit_lst[bestPlayerIndex] = 0   # prevent player from being selected again
 
         #print("Selected: " + players[bestPlayerIndex].name + ". I've selected them " + str(players[bestPlayerIndex].numPulls) + " times.")
