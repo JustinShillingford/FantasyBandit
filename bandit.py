@@ -18,16 +18,25 @@ class Player:
         self.winShares = winShares
         self.gamesPlayed = gamesPlayed
 
-def initPlayersList():
+# make a dictionary of player names
+    # key = player name, value = number of times seen
+# if in dictionary, just increment all the values & num_times_seen
+# else, create the values and add to dictionary
+
+# at the end, average values out
+
+def initPlayersList(team):
     with open('nba-players-stats/Seasons_Stats.csv') as statsCSV:
         reader = csv.reader(statsCSV, delimiter=',')
         firstLine = True
         players = []
+        player_seen_dict = {}
+        player_index_dict = {}
         last_player = ""
         for row in reader:
             if (firstLine):
                 firstLine = False
-            else:
+            elif team != None:
                 # Player Processing Code goes here
 
                 # Name = row[2]
@@ -36,6 +45,34 @@ def initPlayersList():
                 # Win Shares = row[24]
                 # Games Played = row[6] <-- The numbers on this one look kinda weird for some reason
 
+                # only include players within specified team
+                if team == row[5].lower() and len(row[2]) > 0 and len(row[9]) > 0 and int(row[1]) >= 2000:
+                    name = row[2]
+                    per = row[9]
+                    winShares = row[24]
+                    gamesPlayed = row[6]
+                    year = row[1]
+
+                    if name in player_seen_dict:
+                        player_seen_dict[name] += 1     # increment num_times_seen
+
+                        # increment player values
+                        players[player_index_dict[name]].rewardSum += float(per)
+                        players[player_index_dict[name]].per += float(per)
+                        players[player_index_dict[name]].winShares += float(winShares)
+                        players[player_index_dict[name]].gamesPlayed += float(gamesPlayed)
+                        players[player_index_dict[name]].probability += players[player_index_dict[name]].gamesPlayed
+
+                    else:
+                        player_seen_dict[name] = 1      # add player to dictionary
+                        player_index_dict[name] = len(players)  # next index is length of list
+
+                        #if int(year) >= 2000:
+                            # 0's are used as placeholders for the calculated values
+                        players.append(Player(name, float(per), 0, 0, (float(gamesPlayed) / 82), float(per), float(winShares), float(gamesPlayed)))
+                            #players.append(Player(name, float(per), 0, 0, (float(gamesPlayed) / 82), per, winShares, gamesPlayed))
+
+            else:
                 # check if there are multiple rows of identical player
                 # first row a player appears in always tends to be TOT, so we only need to store that one
                 if last_player != row[2]:
@@ -50,6 +87,17 @@ def initPlayersList():
                         players.append(Player(name, float(per), 0, 0, (float(gamesPlayed) / 82), per, winShares, gamesPlayed))
 
                     last_player = name
+
+        # average each player's values
+        for i in range (0, len(players)):
+            num_times_seen = player_seen_dict[players[i].name]
+
+            players[i].rewardSum /= num_times_seen
+            players[i].per /= num_times_seen
+            players[i].winShares /= num_times_seen
+            players[i].gamesPlayed /= num_times_seen
+            players[i].probability /= (82 * num_times_seen)
+
     print("Length of players = " + str(len(players)))
     return players
 
@@ -63,10 +111,12 @@ def reward(player):
     if (random.random() > player.probability):
         return 0
     else:
-        return player.rewardSum
+        return float(player.per)
 
 def multiArmedBandit(players):
     exploreVsExploit_lst = []
+    keep = []
+    kept = 0
 
     for i in range(len(players)):
         players[i].rewardSum = reward(players[i])
@@ -74,15 +124,16 @@ def multiArmedBandit(players):
         players[i].exploreVsExploit = 0
 
         exploreVsExploit_lst.append(0)
+        keep.append(0)
 
     # At this point, you've pulled everything once
     totalPulls = len(players)
 
-    while(True):
+    while(kept < 15):
 
         # Pick argmax from exploreVsExploit, then look at that corresponding player in players array
         bestPlayerIndex = np.argmax(exploreVsExploit_lst)
-        # print("index = " + str(bestPlayerIndex) + " - ")
+        #print("index = " + str(bestPlayerIndex) + " - ")
 
         # Add a pull for the best player, update rewardSum for player that's been pulled
         players[bestPlayerIndex].numPulls += 1
@@ -92,13 +143,54 @@ def multiArmedBandit(players):
         totalPulls += 1
         # Go thru and update exploreVsExploit for ALL players on next (N+1) pull
         for i in range(len(players)):
-            exploreVsExploit_lst[i] = exploration(players[i], totalPulls) + exploitation(players[i])
+            if keep[i] != 1:    # player hasn't been chosen to stay
+                exploreVsExploit_lst[i] = exploration(players[i], totalPulls) + exploitation(players[i])
+            else:               # stop updating kept player
+                exploreVsExploit_lst[i] = 0
 
         # print(exploreVsExploit_lst)
 
-        print("Selected: " + players[bestPlayerIndex].name + ". I've selected them " + str(players[bestPlayerIndex].numPulls) + " times.")
+        # Mark a player if we choose to keep
+        if(players[bestPlayerIndex].numPulls > 50):
+            keep[bestPlayerIndex] = 1               # mark the player
+            kept += 1
+            exploreVsExploit_lst[bestPlayerIndex] = 0   # prevent player from being selected again
 
+        #print("Selected: " + players[bestPlayerIndex].name + ". I've selected them " + str(players[bestPlayerIndex].numPulls) + " times.")
 
-players = initPlayersList()
-np_players = np.array(players)
-multiArmedBandit(np_players)
+    return keep
+
+def print_players(keep, all):
+    # lists to store player names
+    players_kept = []
+    players_removed = []
+
+    # create lists and concurrently print kept players
+    for i in range(0, len(all)):
+        if keep[i] == 1:
+            players_kept.append(all[i].name)
+            print("Keep: " + all[i].name)
+        else:
+            players_removed.append(all[i].name)
+
+    # print removed players
+    # for i in range(0, len(players_removed)):
+    #     print("Remove: " + players_removed[i])
+
+# team is a string version of the acronym for a given team
+def runBandit(team = None):
+    players = initPlayersList(team)
+    np_players = np.array(players)
+    kept_player_indices = multiArmedBandit(np_players)
+    print_players(kept_player_indices, np_players)
+
+# only works in python 2.7, later versions require 'input' function
+team = raw_input("Enter the team you're interested in or 'None' otherwise: ").lower()
+if team != "None":
+    runBandit(team)
+else:
+    runBandit()
+
+# give user year selection
+# average each player's data for all years
+# give precedence to recent performance somehow
