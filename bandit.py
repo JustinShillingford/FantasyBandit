@@ -25,7 +25,7 @@ class Player:
 
 # at the end, average values out
 
-def initPlayersList(team):
+def initPlayersList(start_year, team):
     with open('nba-players-stats/Seasons_Stats.csv') as statsCSV:
         reader = csv.reader(statsCSV, delimiter=',')
         firstLine = True
@@ -45,7 +45,7 @@ def initPlayersList(team):
                 # Games Played = row[6] <-- The numbers on this one look kinda weird for some reason
 
                 # only include players within specified team
-                if team == row[5].lower() and len(row[2]) > 0 and len(row[9]) > 0 and int(row[1]) >= 2000:
+                if team == row[5].lower() and len(row[2]) > 0 and len(row[9]) > 0 and int(row[1]) >= start_year and (int(row[1]) <= start_year + 2):
                     name = row[2]
                     per = row[9]
                     winShares = row[24]
@@ -177,18 +177,26 @@ def print_players(keep, all):
     #     print("Remove: " + players_removed[i])
 
 # team is a string version of the acronym for a given team
-def runBandit(team = None):
-    players = initPlayersList(team)
+def runBandit(start_year, team = None):
+    players = initPlayersList(start_year, team)
     np_players = np.array(players)
     kept_player_indices = multiArmedBandit(np_players)
     print_players(kept_player_indices, np_players)
 
 # only works in python 2.7, later versions require 'input' function
-team = raw_input("Enter the team you're interested in or 'None' otherwise: ").lower()
-if team != "None":
-    runBandit(team)
+team = raw_input("Enter the official acronym for the team you're interested in or 'None' otherwise: ").lower()
+#select_year = raw_input("Player data is obtained from 2000-2017 by default. Would you like to specify a year range? Enter 'Y' for yes or 'N' for no.").lower()
+start_year = int(raw_input("Player data is available for 2000-2017. Algorithm will use 3 consecutive years inclusive. Enter a specific year to begin retrieving data from: "))
+
+start_year = (start_year > 2015) and 2015 or start_year
+# if (select_year == "y"):
+#     start_year = int(raw_input("Enter a start year in the range [2000, 2017]: "))
+#     end_year = int(raw_input("Enter an end year in the range [2000, 2017]: "))
+
+if team != "none":
+    runBandit(start_year, team)
 else:
-    runBandit()
+    runBandit(start_year)
 
 # give user year selection
 # average each player's data for all years
