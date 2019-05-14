@@ -32,6 +32,7 @@ def initPlayersList():
 
                 # Name = row[2]
                 # PER = row[9]
+                # +/- = row[29]
                 # Win Shares = row[24]
                 # Games Played = row[6] <-- The numbers on this one look kinda weird for some reason
 
@@ -47,7 +48,7 @@ def initPlayersList():
                     if len(name) > 0 and int(year) >= 2000 and len(per) > 0:
                         # 0's are used as placeholders for the calculated values
                         players.append(Player(name, float(per), 0, 0, (float(gamesPlayed) / 82), per, winShares, gamesPlayed))
-                    
+
                     last_player = name
     print("Length of players = " + str(len(players)))
     return players
@@ -78,7 +79,7 @@ def multiArmedBandit(players):
     totalPulls = len(players)
 
     while(True):
-        
+
         # Pick argmax from exploreVsExploit, then look at that corresponding player in players array
         bestPlayerIndex = np.argmax(exploreVsExploit_lst)
         # print("index = " + str(bestPlayerIndex) + " - ")
@@ -92,7 +93,7 @@ def multiArmedBandit(players):
         # Go thru and update exploreVsExploit for ALL players on next (N+1) pull
         for i in range(len(players)):
             exploreVsExploit_lst[i] = exploration(players[i], totalPulls) + exploitation(players[i])
-        
+
         # print(exploreVsExploit_lst)
 
         print("Selected: " + players[bestPlayerIndex].name + ". I've selected them " + str(players[bestPlayerIndex].numPulls) + " times.")
