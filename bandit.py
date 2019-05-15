@@ -49,7 +49,7 @@ def initPlayersList(start_year, check_year, team):
                 # PER = row[9]
                 # +/- = row[29]
                 # Win Shares = row[24]
-                # Games Played = row[6] <-- The numbers on this one look kinda weird for some reason
+                # Games Played = row[6]
 
                 # only include players within specified team and year range
                 if team == row[5].lower() and len(row[2]) > 0 and len(row[9]) > 0 and int(row[1]) >= start_year and (int(row[1]) <= start_year + 2):
@@ -102,7 +102,7 @@ def reward(player):
     if (random.random() > player.probability):
         return 0
     else:
-        return float(player.per)
+        return player.gamesPlayed * player.winShares
 
 # Returns a list of marks that coincide with the indicies of the [players] list that
 # indicates whether to keep a player (1) or remove the player (0) from the team.
@@ -202,7 +202,7 @@ def runBandit(start_year, team):
 
 
 # only works in python 2.7, later versions require 'input' function
-team = raw_input("Enter the official acronym for the team you're interested in or 'None' otherwise: ").lower()
+team = raw_input("Enter the official acronym for the team you're interested in: ").lower()
 
 start_year = int(raw_input("Player data is available for 2000-2017. Algorithm will use 3 consecutive years inclusive. Enter a specific year to begin retrieving data from: "))
 start_year = (start_year > 2015) and 2015 or start_year
